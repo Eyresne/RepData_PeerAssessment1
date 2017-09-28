@@ -1,33 +1,35 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
-```{r, message=FALSE, warning=FALSE}
+
+```r
 library(dplyr)
 library(magrittr)
 A <- read.csv("~/Datasets/Coursera5.1/activity.csv")
 A$date <- as.Date(A$date)
-
 ```
 
 
 
 ## What is mean total number of steps taken per day?
-```{r}
+
+```r
 A.sums <- summarize(group_by(A,date), steps = sum(steps,na.rm = T))
 hist(A.sums$steps, main = "Distibution of steps per day", xlab = "Daily Total Steps", ylab = "Frequency")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png)<!-- -->
+
+```r
 ootpoot <- paste("The mean is", round(mean(A.sums$steps)),"and the median is", median(A.sums$steps))
 ```
-Here is a histogram showing the distribtion. `r ootpoot` steps per day.
+Here is a histogram showing the distribtion. The mean is 9354 and the median is 10395 steps per day.
 
 
 ## What is the average daily activity pattern?
-```{r}
+
+```r
 A.int <- summarize(group_by(A,interval), steps = mean(steps,na.rm = T))
 attach(A.int)
 plot(interval, steps, type = "l"
@@ -35,6 +37,11 @@ plot(interval, steps, type = "l"
      , xlab = "Time of day (hhmm)"
      , ylab = "Steps taken"
      )
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
+```r
 v <- steps== max(steps) #vector IDing max
 ootpoot <- paste( "The busiest interval on average is", subset(A.int,v)[[1]]
   ,"with", round(subset(A.int, v))[[2]], "steps."
@@ -42,47 +49,61 @@ ootpoot <- paste( "The busiest interval on average is", subset(A.int,v)[[1]]
 detach()
 ```
 
-`r ootpoot`
+The busiest interval on average is 835 with 206 steps.
 
 
 ## Imputing missing values
 Let's get a look at the problem.
-```{r}
+
+```r
 miss.step <- summarise(group_by(A,date), nas = mean(is.na(steps)))
 plot(miss.step)
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
+
 Looks like we're missing all data for just a few days.
 
-```{r}
+
+```r
 ct.Missing = length(filter(miss.step,nas == 1)[[1]])
 ```
 
-Ok, so `r ct.Missing` days.
+Ok, so 8 days.
 
-```{r}
+
+```r
 ISteps <- summarize(group_by(A,interval), meanSteps = mean(steps, na.rm = T))
 A2 <- inner_join(A,ISteps) %>% 
   mutate(steps2 = ifelse(is.na(steps),meanSteps,steps))
- 
+```
+
+```
+## Joining, by = "interval"
 ```
 
 This message confirms we joined on Interval. Now we check the effect on our data.
 
-```{r}
+
+```r
 A2.sums <- summarize(group_by(A2,date), steps = sum(steps,na.rm = T))
 hist(A2.sums$steps, main = "Distibution of steps per day (imputed)", xlab = "Daily Total Steps", ylab = "Frequency")
-ootpoot2 <- paste("the mean is", round(mean(A2.sums$steps)),"and the median is", median(A2.sums$steps))
-
 ```
 
-We find that `r ootpoot2` which is very close to what we had before.
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
+
+```r
+ootpoot2 <- paste("the mean is", round(mean(A2.sums$steps)),"and the median is", median(A2.sums$steps))
+```
+
+We find that the mean is 9354 and the median is 10395 which is very close to what we had before.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 First, let's create our factors and toss in a average and standard deviation of the total daily steps.
-```{r}
+
+```r
 A2 <- mutate(A2
           , wkday = as.factor(weekdays(date))
           , dd = as.factor(ifelse(wkday %in% c("Saturday","Sunday"), "Weekend","Weekday"))
@@ -94,7 +115,8 @@ A2.int <- summarize(
 ```
 
 Now let's make the plot requested.
-```{r}
+
+```r
 par(mfrow =c(2,1))
 
 with(subset(A2.int,dd=="Weekend")
@@ -110,8 +132,9 @@ with(subset(A2.int,dd=="Weekday")
           , xlab = "Time of day (hhmm)"
           , ylab = "Steps taken"
           ))
-
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
 
 We can see our participant walks around a lot more on the weekend, but not as much early in the morning. That's consistent with rushing to work on weekdays and taking leisurely strolls on weekends.
 
